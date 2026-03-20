@@ -1,14 +1,10 @@
 import os
 import sqlite3
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "db.sqlite")
-os.makedirs(BASE_DIR, exist_ok=True)
-
-from datetime import datetime
-
+DB_PATH = "/tmp/ali.db"
 
 def get_conn():
+    return sqlite3.connect(DB_PATH)
 
 def init_db():
     conn = get_conn()
@@ -24,7 +20,6 @@ def init_db():
             created_at TEXT,
             updated_at TEXT
         );
-
         CREATE TABLE IF NOT EXISTS contacts (
             contact_id TEXT PRIMARY KEY,
             project_id TEXT,
@@ -38,9 +33,9 @@ def init_db():
             do_not_contact INTEGER DEFAULT 0,
             bounce_type TEXT,
             reply_state TEXT DEFAULT 'none',
-            attempt_count INTEGER DEFAULT 0
+            attempt_count INTEGER DEFAULT 0,
+            created_at TEXT
         );
-
         CREATE TABLE IF NOT EXISTS claims (
             claim_id TEXT PRIMARY KEY,
             project_id TEXT,
@@ -51,7 +46,6 @@ def init_db():
             evidence_time TEXT,
             verified INTEGER DEFAULT 0
         );
-
         CREATE TABLE IF NOT EXISTS interactions (
             interaction_id TEXT PRIMARY KEY,
             contact_id TEXT,
@@ -70,7 +64,7 @@ def init_db():
     """)
     conn.commit()
     conn.close()
-    print("DB initialized")
+    print('DB initialized')
 
 def can_contact(contact_address, channel):
     conn = get_conn()
@@ -92,6 +86,7 @@ def can_contact(contact_address, channel):
     return True
 
 def save_project(project_id, name, url, status='new'):
+    from datetime import datetime
     conn = get_conn()
     now = datetime.utcnow().isoformat()
     conn.execute("""
@@ -99,14 +94,13 @@ def save_project(project_id, name, url, status='new'):
         (project_id, project_name, project_url, project_status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?)
     """, (project_id, name, url, status, now, now))
-    conn.execute("""
-        UPDATE projects SET project_status=?, updated_at=? WHERE project_id=?
-    """, (status, now, project_id))
+    conn.execute("UPDATE projects SET project_status=?, updated_at=? WHERE project_id=?", (status, now, project_id))
     conn.commit()
     conn.close()
 
 def save_claim(project_id, claim_type, claim_text, observed, source, verified=True):
     import uuid
+    from datetime import datetime
     conn = get_conn()
     now = datetime.utcnow().isoformat()
     conn.execute("""
@@ -119,20 +113,23 @@ def save_claim(project_id, claim_type, claim_text, observed, source, verified=Tr
 
 def save_contact(project_id, name, channel, address):
     import uuid
+    from datetime import datetime
     conn = get_conn()
     contact_id = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
     conn.execute("""
         INSERT OR IGNORE INTO contacts
         (contact_id, project_id, contact_name, contact_channel, contact_address, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
-    """, (contact_id, project_id, name, channel, address, datetime.utcnow().isoformat()))
+    """, (contact_id, project_id, name, channel, address, now))
     conn.commit()
-    row = conn.execute("SELECT contact_id FROM contacts WHERE contact_address=? AND contact_channel=?", (address, channel)).fetchone()
+    row = conn.execute('SELECT contact_id FROM contacts WHERE contact_address=? AND contact_channel=?', (address, channel)).fetchone()
     conn.close()
     return row[0] if row else contact_id
 
 def mark_sent(contact_id, project_id, channel, subject, body, message_id):
     import uuid
+    from datetime import datetime
     conn = get_conn()
     now = datetime.utcnow().isoformat()
     conn.execute("""
@@ -141,7 +138,8 @@ def mark_sent(contact_id, project_id, channel, subject, body, message_id):
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (str(uuid.uuid4()), contact_id, project_id, channel, subject, body, message_id, now))
     conn.execute("""
-        UPDATE contacts SET contact_status='sent', last_contact_at=?, attempt_count=attempt_count+1,
+        UPDATE contacts SET contact_status='sent', last_contact_at=?,
+        attempt_count=attempt_count+1,
         first_contact_at=COALESCE(first_contact_at, ?)
         WHERE contact_id=?
     """, (now, now, contact_id))
@@ -150,12 +148,9 @@ def mark_sent(contact_id, project_id, channel, subject, body, message_id):
 
 def mark_rejected(contact_address, channel):
     conn = get_conn()
-    conn.execute("""
-        UPDATE contacts SET contact_status='rejected', do_not_contact=1
-        WHERE contact_address=? AND contact_channel=?
-    """, (contact_address, channel))
+    conn.execute("UPDATE contacts SET contact_status='rejected', do_not_contact=1 WHERE contact_address=? AND contact_channel=?", (contact_address, channel))
     conn.commit()
     conn.close()
 
-if __name__ == "__main__":
-    init_db()
+def get_conn_public():
+    return get_conn()
