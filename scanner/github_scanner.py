@@ -6,7 +6,8 @@ import sys
 sys.path.insert(0, "/data/data/com.termux/files/home/ali")
 from memory.db import save_project, save_claim, init_db
 
-GITHUB_TOKEN = ""  # set via env
+import os
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 def get_headers():
     return {
