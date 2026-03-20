@@ -1,13 +1,14 @@
-
+import os
 import sqlite3
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "db.sqlite")
+os.makedirs(BASE_DIR, exist_ok=True)
+
 from datetime import datetime
 
-import os
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ali.sqlite")
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 def get_conn():
-    return sqlite3.connect(DB_PATH)
 
 def init_db():
     conn = get_conn()
