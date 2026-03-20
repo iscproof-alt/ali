@@ -108,6 +108,7 @@ if __name__ == "__main__":
         
         # Ilk raporu hemen ver
         run_report()
+        run_outreach()
         print("Entering loop...")
         while True:
             schedule.run_pending()
