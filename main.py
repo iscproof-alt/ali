@@ -90,7 +90,7 @@ if __name__ == "__main__":
         sys.exit(0)
     else:
         # Her gece 02:00 UTC tarama
-        schedule.every().day.at("02:00").do(run_outreach)
+        schedule.every(30).minutes.do(run_outreach)
         # Her sabah 07:00 UTC rapor
         schedule.every().day.at("07:00").do(run_report)
         
