@@ -60,6 +60,13 @@ def run_outreach():
     
     print(f"Cycle complete. Sent: {sent}")
 
+import sys
+sys.path.insert(0, "/app")
+try:
+    from reporter.telegram import send_telegram
+except:
+    def send_telegram(msg): print(msg)
+
 def run_report():
     conn = get_conn()
     print(f"\n=== ALI DAILY REPORT {datetime.utcnow().strftime('%Y-%m-%d')} ===")
@@ -71,13 +78,15 @@ def run_report():
     rejected = conn.execute("SELECT COUNT(*) FROM contacts WHERE contact_status='rejected'").fetchone()[0]
     success = conn.execute("SELECT COUNT(*) FROM projects WHERE success_state=1").fetchone()[0]
     
-    print(f"Projects scanned:   {total_projects}")
-    print(f"Qualified:          {qualified}")
-    print(f"Contacted:          {contacted}")
-    print(f"Replied:            {replied}")
-    print(f"Rejected:           {rejected}")
-    print(f"Success:            {success}")
-    print("=" * 40)
+    report = f"""=== ALI DAILY REPORT ===
+Projects scanned: {total_projects}
+Qualified: {qualified}
+Contacted: {contacted}
+Replied: {replied}
+Rejected: {rejected}
+Success: {success}"""
+    print(report)
+    send_telegram(report)
     conn.close()
 
 if __name__ == "__main__":
