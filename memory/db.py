@@ -2,7 +2,9 @@
 import sqlite3
 from datetime import datetime
 
-DB_PATH = "/data/data/com.termux/files/home/ali/memory/ali.sqlite"
+import os
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ali.sqlite")
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 def get_conn():
     return sqlite3.connect(DB_PATH)
