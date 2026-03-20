@@ -1,7 +1,8 @@
 import os
 import sqlite3
 
-DB_PATH = "/tmp/ali.db"
+import os
+DB_PATH = os.environ.get("DB_PATH", "/tmp/ali.db")
 
 def get_conn():
     return sqlite3.connect(DB_PATH)
